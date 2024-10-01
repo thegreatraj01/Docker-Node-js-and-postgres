@@ -1,0 +1,38 @@
+
+services:  # Defines the services that will run in separate containers
+
+  nodeapp:  # Service for the Node.js application
+    build:  # Specifies how to build the Docker image for the Node.js app
+      context: .  # Sets the build context to the current directory
+      dockerfile: Dockerfile  # Specifies that the Dockerfile in the current directory will be used to build the image
+    ports:
+      - "5000:5000"  # Maps port 5000 on the host to port 5000 inside the container (used to access the app)
+    container_name: node_app
+    environment:  # Defines environment variables for the Node.js app
+      POSTGRES_USER: user  # Specifies the PostgreSQL user (used to connect to the db)
+      POSTGRES_PASSWORD: password  # Specifies the password for the PostgreSQL user
+      POSTGRES_DB: mydatabase  # Name of the PostgreSQL database to connect to
+      DB_HOST: db  # Hostname of the PostgreSQL database (refers to the 'db' service in this file)
+      DB_PORT: 5432  # Port on which the PostgreSQL database listens (default PostgreSQL port)
+      CHOKIDAR_USEPOLLING: true  # Enables polling for file change detection
+    depends_on:
+      - db  # Specifies that the 'nodeapp' service depends on the 'db' service, ensuring the db starts first
+    volumes:
+      - .:/usr/src/app  # Mounts the current directory's src to /app in the container (your Node.js source code)
+      - /usr/src/app/node_modules
+    command: npm run dev -- --exec nodemon
+
+
+  db:  # Service for the PostgreSQL database
+    image: postgres:17.0  # Specifies the Docker image for PostgreSQL (version 17.0)
+    environment:  # Environment variables to configure PostgreSQL
+      POSTGRES_USER: user  # Sets the PostgreSQL user to be created when the container starts
+      POSTGRES_PASSWORD: password  # Sets the password for the PostgreSQL user
+      POSTGRES_DB: mydatabase  # Sets the name of the database to be created at startup
+    ports:
+      - "5432:5432"  # Maps port 5432 on the host to port 5432 inside the container (default PostgreSQL port)
+    volumes:
+      - postgres_data:/data/db  # Mounts a Docker volume for persistent database storage
+    container_name: postgres_db
+volumes:
+  postgres_data:  # Defines a named volume to persist PostgreSQL data even if the container is removed
